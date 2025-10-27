@@ -1,7 +1,8 @@
-// Bootstrap + tema
-@import "bootstrap/scss/functions";
+// Bootstrap + Tema
+@use "bootstrap/scss/functions" as *; // Usar el módulo de funciones de Bootstrap
+@use "bootstrap/scss/bootstrap" as *;  // Usar el módulo principal de Bootstrap
 
-// Paleta (puedes ajustarla para un look “Booking-like” pero original)
+// Paleta y tema
 $primary: #0a58ca; // azul propio
 $secondary: #f5b700; // acento
 $body-font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
@@ -9,22 +10,42 @@ $enable-rounded: true;
 $btn-border-radius: 0.65rem;
 $card-border-radius: 1rem;
 
-@import "bootstrap/scss/bootstrap";
+// Fondo dinámico de la página principal
+:root {
+  --hero-home: url('/assets/hero.jpg');
+  --hero-results: url('/assets/hero.jpg');
+}
 
-// Utilidades extra
 .hero {
-  background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.35)),
-              url('/assets/hero.jpg') center/cover no-repeat;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.35)),
+    var(--hero-home) center/cover no-repeat;
   color: #fff;
   padding: 5rem 0;
+  transition: background-image .35s ease;
 }
-.result-thumb { object-fit: cover; height: 180px; }
 
+.hero--results {
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.35)),
+    var(--hero-results) center/cover no-repeat;
+  min-height: 200px; 
+}
+
+// Para mostrar las imágenes de los resultados
+.result-thumb { 
+  object-fit: cover; 
+  height: 180px; 
+  background: #f8f9fa; 
+}
+
+// Estilo de los badges
 .badge.bg-light.text-dark.border {
   border-color: #e9ecef !important;
   font-weight: 500;
 }
 
+// Carrito flotante
 .floating-cart {
   position: fixed;
   right: 1rem;
@@ -40,4 +61,4 @@ $card-border-radius: 1rem;
   transform: translateY(0);
   opacity: 1;
 }
-.result-thumb { background: #f8f9fa; }
+
