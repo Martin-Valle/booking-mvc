@@ -13,10 +13,11 @@ export function RestaurantController() {
   const id = params.get("id");
 
   if (!id) {
-    mount.innerHTML = `<div class="container py-5">
-      <h3>Restaurante no encontrado</h3>
-      <p class="text-muted">Falta el parámetro <code>id</code>.</p>
-    </div>`;
+    mount.innerHTML = `
+      <div class="container py-5">
+        <h3>Restaurante no encontrado</h3>
+        <p class="text-muted">Falta el parámetro <code>id</code>.</p>
+      </div>`;
     return;
   }
 
@@ -26,16 +27,21 @@ export function RestaurantController() {
     return;
   }
 
-  const view = RestaurantDetailView(r);
+  // --- callback que usará la vista ---
+  const onAdd = () => {
+    const sr: SearchResult = { kind: "restaurant", item: r };
+    addFromResult(sr);
+    showToast(); // o showToast("Agregado al carrito");
+  };
+
+  // Pasamos el callback a la vista
+  const view = RestaurantDetailView(r, onAdd);
   mount.appendChild(view);
 
-  // Botón "Agregar al carrito"
+  // Fallback: si la vista aún no enlaza #add internamente, lo enlazamos aquí
   const btn = view.querySelector<HTMLButtonElement>("#add");
-  if (btn) {
-    btn.addEventListener("click", () => {
-      const sr: SearchResult = { kind: "restaurant", item: r };
-      addFromResult(sr);
-      showToast();
-    });
+  if (btn && !btn.dataset.bound) {
+    btn.addEventListener("click", onAdd);
+    btn.dataset.bound = "1";
   }
 }
