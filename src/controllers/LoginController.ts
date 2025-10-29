@@ -1,20 +1,38 @@
+// src/controllers/LoginController.ts
 import { LoginView } from "../views/LoginView";
-import { auth } from "../services/auth.service";
+import { authLogin, authMe } from "../services/auth.service"; // <- usa los wrappers exportados
 import { router } from "../core/router";
-import { toast } from "../core/toast";
 
-export function LoginController() {
+export async function LoginController() {
   const mount = document.getElementById("view")!;
+
+  // Si ya hay sesión, redirige
+  const me = await authMe();
+  if (me) {
+    router.navigate("/profile");
+    return;
+  }
+
+  const view: any = LoginView(async (email: string, password: string) => {
+    try {
+      await authLogin(email, password);
+
+      // vuelve a consultar el usuario ya autenticado
+      const u = await authMe();
+
+      // actualiza el texto del menú "Perfil"
+      const link = document.querySelector('a[href="#/profile"]');
+      if (link) (link as HTMLAnchorElement).textContent = u ? u.name : "Perfil";
+
+      router.navigate("/profile");
+    } catch (e: any) {
+      const msg = e?.message ?? "No se pudo iniciar sesión.";
+      if (typeof view?.setError === "function") view.setError(msg);
+      else alert(msg);
+    }
+  });
+
   mount.innerHTML = "";
-  mount.appendChild(
-    LoginView(async (email, password) => {
-      try {
-        await auth.login(email, password);
-        toast.success("Sesión iniciada");
-        router.navigate("/"); // o /profile
-      } catch (e: any) {
-        toast.error(e.message || "No se pudo iniciar sesión");
-      }
-    })
-  );
+  // soporta que la vista devuelva elemento o { el }
+  mount.appendChild(view instanceof HTMLElement ? view : (view?.el ?? view));
 }
