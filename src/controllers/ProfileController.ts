@@ -1,8 +1,8 @@
 // src/controllers/ProfileController.ts
-import { authMe, logout, myOrders, adminUsers, adminOrdersByUser } from "../services/auth.service";
+import { authMe, myOrders, adminUsers, adminOrdersByUser, logout as _logout } from "../services/auth.service";
 import type { Order } from "../models/types";
 import { router } from "../core/router";
-
+const logout = _logout;
 // formatea dinero con fallback de moneda
 function fmtMoney(n: number, c?: string) {
   return new Intl.NumberFormat("es-EC", {

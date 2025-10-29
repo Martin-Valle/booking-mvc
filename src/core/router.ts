@@ -1,52 +1,67 @@
-type Route = { path: string; action: () => void };
+import { LoginController } from "../controllers/LoginController";
+import { RegisterController } from "../controllers/RegisterController";
+import { ProfileController } from "../controllers/ProfileController";
+
+type Route = { path: string; action: () => void | Promise<void> };
 
 export class Router {
   private routes: Route[] = [];
 
   constructor() {
-    console.log('[Router] Constructor called, attaching event listeners');
-    window.addEventListener("hashchange", () => {
-      console.log('[Router] hashchange event fired');
-      this.resolve();
-    });
-    window.addEventListener("load", () => {
-      console.log('[Router] load event fired');
-      this.resolve();
-    });
+    window.addEventListener("hashchange", () => this.resolve());
+    window.addEventListener("load", () => this.resolve());
   }
 
-  register(path: string, action: () => void) {
-    this.routes.push({ path, action });
+  /** Registra una ruta. Acepta controladores sync o async. */
+  register(path: string, action: () => void | Promise<void>) {
+    const p = path.startsWith("/") ? path : "/" + path;
+    this.routes.push({ path: p, action });
   }
 
-  /**
-   * Navega asegurando el prefijo "/"
-   * Ej: navigate("login") -> "#/login"
-   */
+  /** Alias para compatibilidad: router.add(...) */
+  add(path: string, action: () => void | Promise<void>) {
+    this.register(path, action);
+  }
+
+  /** Navega asegurando el prefijo "/" y fuerza render si es la misma ruta. */
   navigate(path: string) {
     const clean = path.startsWith("/") ? path : "/" + path;
-    location.hash = clean;
+    const target = `#${clean}`;
+    if (location.hash !== target) location.hash = clean;
+    else this.resolve();
   }
 
-  // Public method to manually trigger resolution
+  /** Resuelve la ruta actual del hash. */
   resolve() {
-    console.log('[Router] resolve() called, current hash:', location.hash, 'routes count:', this.routes.length);
-    // Normaliza: "#/ruta?x=1" -> "/ruta"
-    const raw = (location.hash || "#/").replace(/^#/, "");
-    const path = raw.split("?")[0] || "/";
-    console.log('[Router] Normalized path:', path);
+    // "#/ruta?x=1" -> "/ruta"
+    const raw = (location.hash || "#/").slice(1);
+    const path = decodeURIComponent(raw.split("?")[0] || "/");
 
     const hit =
       this.routes.find((r) => r.path === path) ??
       this.routes.find((r) => r.path === "*");
 
-    console.log('[Router] Route match found:', hit ? hit.path : 'NONE');
     if (hit) {
-      console.log('[Router] Executing route action for:', hit.path);
-      hit.action();
+      try {
+        const out = hit.action();
+        if (out && typeof (out as any).then === "function") {
+          (out as Promise<void>).catch((err) =>
+            console.error("[Router] Route action error:", err)
+          );
+        }
+      } catch (err) {
+        console.error("[Router] Route action error:", err);
+      }
+    } else {
+      console.warn("[Router] No route matched for", path);
     }
   }
 }
 
-// ✅ singleton para usar: import { router } from "../core/router";
+// ✅ singleton para usar en toda la app
 export const router = new Router();
+
+/* ========= Rutas de autenticación ========= */
+router.add("/login", LoginController);
+router.add("/register", RegisterController);
+router.add("/profile", ProfileController); // mostrará nombre / admin panel según rol

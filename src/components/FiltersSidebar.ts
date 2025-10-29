@@ -7,8 +7,18 @@ const KIND_LABEL: Record<ServiceKind, string> = {
   restaurant: "Restaurantes",
 };
 
+// Helper: garantiza array aunque llegue undefined/null
+const toArray = <T,>(x: T[] | undefined | null): T[] => (Array.isArray(x) ? x : []);
+
+const ALL_KINDS: ServiceKind[] = ["hotel", "car", "flight", "restaurant"];
+
 export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) => void) {
   const f: FilterState = { ...initial };
+
+  // Defaults seguros para que nunca truene el UI
+  f.kinds = toArray(f.kinds);
+  if (f.kinds.length === 0) f.kinds = [...ALL_KINDS];
+  if (typeof f.ratingMin !== "number") f.ratingMin = 0;
 
   const el = document.createElement("aside");
   el.className = "card shadow-sm p-3 sticky-top";
@@ -21,13 +31,19 @@ export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) 
 
     <div class="mb-3">
       <div class="fw-semibold small text-muted mb-1">Tipo</div>
-      ${(["hotel","car","flight","restaurant"] as ServiceKind[]).map(k => `
+      ${ALL_KINDS
+        .map(
+          (k) => `
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" value="${k}" id="k-${k}" ${f.kinds.includes(k) ? "checked":""}/>
+          <input class="form-check-input" type="checkbox" value="${k}" id="k-${k}" ${
+            toArray(f.kinds).includes(k) ? "checked" : ""
+          }/>
           <label class="form-check-label" for="k-${k}">
             ${k === "restaurant" ? `<span class="text-warning">🍽️ ${KIND_LABEL[k]}</span>` : KIND_LABEL[k]}
           </label>
-        </div>`).join("")}
+        </div>`
+        )
+        .join("")}
     </div>
 
     <div class="mb-3">
@@ -58,23 +74,25 @@ export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) 
       <div class="fw-semibold small text-muted mb-1">Ordenar por</div>
       <select class="form-select form-select-sm" id="sort">
         <option value="">Relevancia</option>
-        <option value="price-asc"  ${f.sort==="price-asc"?"selected":""}>Precio: menor a mayor</option>
-        <option value="price-desc" ${f.sort==="price-desc"?"selected":""}>Precio: mayor a menor</option>
-        <option value="rating-desc"${f.sort==="rating-desc"?"selected":""}>Rating: alto primero</option>
+        <option value="price-asc"  ${f.sort === "price-asc" ? "selected" : ""}>Precio: menor a mayor</option>
+        <option value="price-desc" ${f.sort === "price-desc" ? "selected" : ""}>Precio: mayor a menor</option>
+        <option value="rating-desc"${f.sort === "rating-desc" ? "selected" : ""}>Rating: alto primero</option>
       </select>
     </div>
   `;
 
-  function emit() { onChange({ ...f }); }
+  function emit() {
+    onChange({ ...f });
+  }
 
   // === clear para uso interno y externo ===
   function clear() {
-    f.kinds = ["hotel","car","flight","restaurant"];
+    f.kinds = [...ALL_KINDS];
     f.priceMin = f.priceMax = undefined;
     f.city = undefined;
     f.ratingMin = 0;
     f.sort = undefined;
-    (["hotel","car","flight","restaurant"] as ServiceKind[]).forEach(k => (el.querySelector(`#k-${k}`) as HTMLInputElement).checked = true);
+    ALL_KINDS.forEach((k) => ((el.querySelector(`#k-${k}`) as HTMLInputElement).checked = true));
     (el.querySelector("#priceMin") as HTMLInputElement).value = "";
     (el.querySelector("#priceMax") as HTMLInputElement).value = "";
     (el.querySelector("#city") as HTMLInputElement).value = "";
@@ -94,13 +112,16 @@ export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) 
     if (t.id.startsWith("k-")) {
       const kind = t.getAttribute("value") as ServiceKind;
       if (t instanceof HTMLInputElement && t.type === "checkbox") {
-        if (t.checked && !f.kinds.includes(kind)) f.kinds.push(kind);
-        if (!t.checked) f.kinds = f.kinds.filter(k => k !== kind);
+        // Trabaja sobre una copia segura y reasigna
+        let kinds = toArray(f.kinds);
+        if (t.checked && !kinds.includes(kind)) kinds = [...kinds, kind];
+        if (!t.checked) kinds = kinds.filter((k) => k !== kind);
+        f.kinds = kinds;
       }
     }
     if (t.id === "priceMin") f.priceMin = t.value ? +t.value : undefined;
     if (t.id === "priceMax") f.priceMax = t.value ? +t.value : undefined;
-    if (t.id === "city")     f.city     = t.value || undefined;
+    if (t.id === "city") f.city = t.value || undefined;
     if (t.id === "ratingMin") {
       f.ratingMin = +t.value;
       (el.querySelector("#ratingVal") as HTMLElement).textContent = String(f.ratingMin);

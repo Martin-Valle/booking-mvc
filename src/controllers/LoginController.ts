@@ -1,6 +1,6 @@
 // src/controllers/LoginController.ts
 import { LoginView } from "../views/LoginView";
-import { authLogin, authMe } from "../services/auth.service"; // <- usa los wrappers exportados
+import { authLogin, authMe } from "../services/auth.service";
 import { router } from "../core/router";
 
 export async function LoginController() {
