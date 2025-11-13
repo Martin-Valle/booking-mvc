@@ -1,13 +1,15 @@
+// src/components/FiltersSidebar.ts
 import type { FilterState, ServiceKind } from "../models/types";
 
 const KIND_LABEL: Record<ServiceKind, string> = {
   hotel: "Hoteles",
   car: "Autos",
   flight: "Vuelos",
+  restaurant: "Restaurantes",
 };
 
 export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) => void) {
-  const f: FilterState = { ...initial };
+  const f: FilterState = { ...initial, kinds: [...(initial.kinds ?? [])] };
 
   const el = document.createElement("aside");
   el.className = "card shadow-sm p-3 sticky-top";
@@ -20,7 +22,7 @@ export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) 
 
     <div class="mb-3">
       <div class="fw-semibold small text-muted mb-1">Tipo</div>
-      ${(["hotel","car","flight"] as ServiceKind[]).map(k => `
+      ${(["hotel","car","flight","restaurant"] as ServiceKind[]).map(k => `
         <div class="form-check">
           <input class="form-check-input" type="checkbox" value="${k}" id="k-${k}" ${f.kinds.includes(k) ? "checked":""}/>
           <label class="form-check-label" for="k-${k}">${KIND_LABEL[k]}</label>
@@ -39,12 +41,12 @@ export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) 
     </div>
 
     <div class="mb-3">
-      <div class="fw-semibold small text-muted mb-1">Ciudad (Hoteles)</div>
-      <input class="form-control form-control-sm" id="city" placeholder="Quito, Cuenca..." value="${f.city ?? ""}">
+      <div class="fw-semibold small text-muted mb-1">Ciudad (Hoteles/Restaurantes/Autos)</div>
+      <input class="form-control form-control-sm" id="city" placeholder="Quito, Madrid..." value="${f.city ?? ""}">
     </div>
 
     <div class="mb-3">
-      <div class="fw-semibold small text-muted mb-1">Rating mínimo (Hoteles)</div>
+      <div class="fw-semibold small text-muted mb-1">Rating mínimo (Hoteles/Restaurantes)</div>
       <input type="range" class="form-range" min="0" max="5" step="0.5" id="ratingMin" value="${f.ratingMin ?? 0}">
       <div class="d-flex justify-content-between small">
         <span>0</span><span id="ratingVal">${f.ratingMin ?? 0}</span><span>5</span>
@@ -62,16 +64,18 @@ export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) 
     </div>
   `;
 
-  function emit() { onChange({ ...f }); }
+  const emit = () => onChange({ ...f, kinds: [...f.kinds] });
 
-  // === clear para uso interno y externo ===
   function clear() {
-    f.kinds = ["hotel","car","flight"];
+    f.kinds = ["hotel","car","flight","restaurant"];
     f.priceMin = f.priceMax = undefined;
     f.city = undefined;
     f.ratingMin = 0;
     f.sort = undefined;
-    (["hotel","car","flight"] as ServiceKind[]).forEach(k => (el.querySelector(`#k-${k}`) as HTMLInputElement).checked = true);
+
+    (["hotel","car","flight","restaurant"] as ServiceKind[]).forEach(k => {
+      (el.querySelector(`#k-${k}`) as HTMLInputElement).checked = true;
+    });
     (el.querySelector("#priceMin") as HTMLInputElement).value = "";
     (el.querySelector("#priceMax") as HTMLInputElement).value = "";
     (el.querySelector("#city") as HTMLInputElement).value = "";
@@ -86,27 +90,43 @@ export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) 
     if (t.getAttribute("data-act") === "clear") clear();
   });
 
-  el.addEventListener("input", (e) => {
-    const t = e.target as HTMLInputElement | HTMLSelectElement;
-    if (t.id.startsWith("k-")) {
-      const kind = t.getAttribute("value") as ServiceKind;
-      if (t instanceof HTMLInputElement && t.type === "checkbox") {
-        if (t.checked && !f.kinds.includes(kind)) f.kinds.push(kind);
-        if (!t.checked) f.kinds = f.kinds.filter(k => k !== kind);
+  // 'change' → checkboxes y select
+  el.addEventListener("change", (e) => {
+    const t = e.target as HTMLElement;
+
+    if (t instanceof HTMLInputElement && t.id.startsWith("k-") && t.type === "checkbox") {
+      const kind = t.value as ServiceKind;
+      if (t.checked) {
+        if (!f.kinds.includes(kind)) f.kinds = [...f.kinds, kind];
+      } else {
+        f.kinds = f.kinds.filter(k => k !== kind);
       }
+      emit();
+      return;
     }
-    if (t.id === "priceMin") f.priceMin = t.value ? +t.value : undefined;
-    if (t.id === "priceMax") f.priceMax = t.value ? +t.value : undefined;
-    if (t.id === "city")     f.city     = t.value || undefined;
-    if (t.id === "ratingMin") {
-      f.ratingMin = +t.value;
-      (el.querySelector("#ratingVal") as HTMLElement).textContent = String(f.ratingMin);
+
+    if (t instanceof HTMLSelectElement && t.id === "sort") {
+      f.sort = (t.value || undefined) as any;
+      emit();
     }
-    if (t.id === "sort") f.sort = (t.value || undefined) as any;
-    emit();
   });
 
-  // expone clear() al controller
+  // 'input' → num/text/range
+  el.addEventListener("input", (e) => {
+    const t = e.target as HTMLElement;
+
+    if (t instanceof HTMLInputElement) {
+      if (t.id === "priceMin") f.priceMin = t.value ? +t.value : undefined;
+      if (t.id === "priceMax") f.priceMax = t.value ? +t.value : undefined;
+      if (t.id === "city")     f.city     = t.value || undefined;
+      if (t.id === "ratingMin") {
+        f.ratingMin = +t.value;
+        (el.querySelector("#ratingVal") as HTMLElement).textContent = String(f.ratingMin);
+      }
+      emit();
+    }
+  });
+
   (el as any).clear = clear;
   return el as any;
 }

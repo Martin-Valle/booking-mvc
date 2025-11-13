@@ -1,30 +1,56 @@
-// Bootstrap + tema
-@import "bootstrap/scss/functions";
+/* src/styles/custom.scss */
 
-// Paleta (puedes ajustarla para un look “Booking-like” pero original)
-$primary: #0a58ca; // azul propio
-$secondary: #f5b700; // acento
-$body-font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-$enable-rounded: true;
-$btn-border-radius: 0.65rem;
-$card-border-radius: 1rem;
+/* Bootstrap entry con overrides */
+@use "bootstrap/scss/bootstrap" with (
+  $primary: #0a58ca,
+  $secondary: #f5b700,
 
-@import "bootstrap/scss/bootstrap";
+  // listas entre paréntesis para que Sass no las parta por comas
+  $font-family-sans-serif: ('Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"),
+  $font-family-base: ('Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"),
 
-// Utilidades extra
+  $enable-rounded: true,
+  $btn-border-radius: 0.65rem,
+  $card-border-radius: 1rem
+);
+
+/* ---- Tema de la app ---- */
+/* Imágenes del héroe las inyecta JS con variables CSS (core/theme.ts) */
+:root {
+  --hero-home: none;
+  --hero-results: none;
+}
+
 .hero {
-  background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.35)),
-              url('/assets/hero.jpg') center/cover no-repeat;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.35)),
+    var(--hero-home) center/cover no-repeat;
   color: #fff;
   padding: 5rem 0;
+  min-height: 360px;
+  transition: background-image .35s ease;
 }
-.result-thumb { object-fit: cover; height: 180px; }
+.hero--results {
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.35)),
+    var(--hero-results) center/cover no-repeat;
+  min-height: 260px;
+}
 
+/* Thumbs de resultados */
+.result-thumb {
+  object-fit: cover;
+  height: 180px;
+  background: #f8f9fa;
+}
+
+/* Badges */
 .badge.bg-light.text-dark.border {
   border-color: #e9ecef !important;
   font-weight: 500;
 }
 
+/* Carrito flotante */
 .floating-cart {
   position: fixed;
   right: 1rem;
@@ -33,11 +59,16 @@ $card-border-radius: 1rem;
   transform: translateY(150%);
   opacity: 0;
   transition: all .25s ease;
-  z-index: 1070; // debajo del toast (1080) pero sobre el resto
+  z-index: 1070; /* debajo del toast (1080) */
   border-radius: 999px;
 }
 .floating-cart.show {
   transform: translateY(0);
   opacity: 1;
 }
-.result-thumb { background: #f8f9fa; }
+/* Ocultar botón nativo de revelar contraseña (Edge/Opera/Safari) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear { display: none; }
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden; position: absolute; right: 0;
+}

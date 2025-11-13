@@ -17,6 +17,7 @@
     "@popperjs/core": "^2.11.8",
     "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
-    "dayjs": "^1.11.18"
+    "dayjs": "^1.11.18",
+    "flatpickr": "^4.6.13"
   }
 }

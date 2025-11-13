@@ -1,44 +1,96 @@
-import type { FilterState, SearchResult, ServiceKind } from "../models/types";
 import { mockSearch } from "./adapters/mock.adapter";
-import { esbSearch } from "./adapters/esb.adapter";
+import type {
+  FilterState,
+  SearchResult,
+  Hotel,
+  Car,
+  Flight,
+  Restaurant,
+  ServiceKind,
+} from "../models/types";
 
-const USE_ESB = import.meta.env.VITE_USE_ESB === "true";
+const ALL_KINDS: ServiceKind[] = ["hotel", "car", "flight", "restaurant"];
 
-export async function searchAll(query: string, filters?: FilterState): Promise<SearchResult[]> {
-  const results = USE_ESB ? await esbSearch(query, filters) : await mockSearch(query);
-  return applyFilters(results, filters);
+function normKinds(k?: ServiceKind[]): ServiceKind[] {
+  if (!Array.isArray(k) || k.length === 0) return ALL_KINDS;
+  const set = new Set<ServiceKind>();
+  for (const v of k) {
+    if ((ALL_KINDS as readonly string[]).includes(v)) set.add(v);
+  }
+  return set.size ? Array.from(set) : ALL_KINDS;
 }
 
 function priceOf(r: SearchResult): number {
-  if (r.kind === "hotel")  return (r.item as any).price;
-  if (r.kind === "car")    return (r.item as any).pricePerDay;
-  return (r.item as any).price; // flight
+  switch (r.kind) {
+    case "hotel":      return (r.item as Hotel).price;
+    case "car":        return (r.item as Car).pricePerDay;
+    case "flight":     return (r.item as Flight).price;
+    case "restaurant": return (r.item as Restaurant).pricePerPerson;
+  }
 }
 
-function applyFilters(results: SearchResult[], f?: FilterState): SearchResult[] {
-  if (!f) return results.slice();
+function ratingOf(r: SearchResult): number | undefined {
+  if (r.kind === "hotel")      return (r.item as Hotel).rating;
+  if (r.kind === "restaurant") return (r.item as Restaurant).rating;
+  return undefined;
+}
 
-  let out = results.slice();
+export async function searchAll(q: string, f?: FilterState): Promise<SearchResult[]> {
+  let list = await mockSearch(q); // ya filtra por texto/IATA
 
-  // tipo
-  if (f.kinds?.length) out = out.filter(r => f.kinds.includes(r.kind as ServiceKind));
+  if (!f) return list;
 
-  // ciudad (hoteles)
-  if (f.city) out = out.filter(r => r.kind !== "hotel" || (r.item as any).city?.toLowerCase().includes(f.city!.toLowerCase()));
+  // 1) Tipos (siempre aplicar; si vienen vacíos, usar los 4)
+  const kinds = normKinds(f.kinds);
+  list = list.filter(r => kinds.includes(r.kind));
 
-  // rating mínimo (hoteles)
-  if (typeof f.ratingMin === "number")
-    out = out.filter(r => r.kind !== "hotel" || ((r.item as any).rating ?? 0) >= (f.ratingMin ?? 0));
+  // 2) Precio
+  if (typeof f.priceMin === "number") list = list.filter(r => priceOf(r) >= f.priceMin!);
+  if (typeof f.priceMax === "number") list = list.filter(r => priceOf(r) <= f.priceMax!);
 
-  // precio
-  if (typeof f.priceMin === "number") out = out.filter(r => priceOf(r) >= (f.priceMin as number));
-  if (typeof f.priceMax === "number") out = out.filter(r => priceOf(r) <= (f.priceMax as number));
+  // 3) Ciudad (Hoteles / Restaurantes / Autos)
+  if (f.city && f.city.trim()) {
+    const term = f.city.toLowerCase();
+    list = list.filter((r) => {
+      if (r.kind === "hotel") {
+        const h = r.item as Hotel;
+        return `${h.city} ${h.country ?? ""}`.toLowerCase().includes(term);
+      }
+      if (r.kind === "restaurant") {
+        const res = r.item as Restaurant;
+        return `${res.city} ${res.country ?? ""}`.toLowerCase().includes(term);
+      }
+      if (r.kind === "car") {
+        const c = r.item as Car;
+        return `${c.city ?? ""} ${c.country ?? ""}`.toLowerCase().includes(term);
+      }
+      return true; // vuelos por q/IATA
+    });
+  }
 
-  // ordenar
-  if (f.sort === "price-asc")  out.sort((a,b)=> priceOf(a)-priceOf(b));
-  if (f.sort === "price-desc") out.sort((a,b)=> priceOf(b)-priceOf(a));
-  if (f.sort === "rating-desc")
-    out.sort((a,b)=> ((b.kind==="hotel"? (b.item as any).rating: 0) - (a.kind==="hotel"? (a.item as any).rating: 0)));
+  // 4) Rating mínimo (hoteles/restaurantes)
+  if (typeof f.ratingMin === "number" && f.ratingMin > 0) {
+    list = list.filter((r) => {
+      const val = ratingOf(r);
+      return val == null ? true : val >= f.ratingMin!;
+    });
+  }
 
-  return out;
+  // 5) Orden
+  switch (f.sort) {
+    case "price-asc":
+      list = [...list].sort((a, b) => priceOf(a) - priceOf(b));
+      break;
+    case "price-desc":
+      list = [...list].sort((a, b) => priceOf(b) - priceOf(a));
+      break;
+    case "rating-desc":
+      list = [...list].sort((a, b) => (ratingOf(b) ?? -Infinity) - (ratingOf(a) ?? -Infinity));
+      break;
+    default:
+      // relevancia => orden del adapter
+      break;
+  }
+
+  return list;
 }
