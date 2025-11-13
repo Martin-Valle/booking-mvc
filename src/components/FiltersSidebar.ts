@@ -25,7 +25,9 @@ export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) 
       ${(["hotel","car","flight","restaurant"] as ServiceKind[]).map(k => `
         <div class="form-check">
           <input class="form-check-input" type="checkbox" value="${k}" id="k-${k}" ${f.kinds.includes(k) ? "checked":""}/>
-          <label class="form-check-label" for="k-${k}">${KIND_LABEL[k]}</label>
+          <label class="form-check-label" for="k-${k}">
+            ${k === "restaurant" ? `<span class="text-warning">🍽️ ${KIND_LABEL[k]}</span>` : KIND_LABEL[k]}
+          </label>
         </div>`).join("")}
     </div>
 
@@ -37,7 +39,7 @@ export function FiltersSidebar(initial: FilterState, onChange: (f: FilterState) 
         <span class="input-group-text">—</span>
         <input type="number" class="form-control" placeholder="máx" id="priceMax" value="${f.priceMax ?? ""}">
       </div>
-      <div class="form-text">Para autos es por día.</div>
+      <div class="form-text">Para autos: precio por día | Restaurantes: por persona</div>
     </div>
 
     <div class="mb-3">

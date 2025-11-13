@@ -90,7 +90,7 @@ export function ResultCard(r: SearchResult, onAdd: () => void) {
               ? `<a href="#/restaurant?id=${(r.item as any).id}" class="btn btn-outline-secondary btn-sm">Ver</a>`
               : `<a href="#/flight?id=${(r.item as any).id}" class="btn btn-outline-secondary btn-sm">Ver</a>`
           }
-          <button class="btn btn-primary btn-sm">Agregar</button>
+          <button class="btn btn-${r.kind === "restaurant" ? "warning" : "primary"} btn-sm">Agregar</button>
         </div>
       </div>
     </div>`;

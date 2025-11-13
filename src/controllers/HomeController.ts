@@ -7,7 +7,9 @@ import { ResultCard } from "../components/ResultCard";
 import type { FilterState, SearchResult } from "../models/types";
 
 export function HomeController() {
+  console.log('[HomeController] Controller called');
   const mount = document.getElementById("view")!;
+  console.log('[HomeController] Mount element:', mount);
   mount.innerHTML = "";
 
   // 👉 NO vuelvas a escribir "kinds" aquí. SearchBar ya lo guarda.

@@ -55,6 +55,9 @@ export async function mockSearch(q: string): Promise<SearchResult[]> {
   const F = flights
     .filter(f => `${iataText(f.from)} ${iataText(f.to)} ${f.airline}`.toLowerCase().includes(term))
     .map(f => ({ kind: "flight", item: f }) as SearchResult);
+  const R = restaurants
+    .filter(r => `${r.name} ${r.city} ${r.cuisine}`.toLowerCase().includes(term))
+    .map(r => ({ kind: "restaurant", item: r }) as SearchResult);
 
   const R = restaurants
     .filter(r => `${r.name} ${r.city} ${r.country ?? ""} ${(r.cuisineTags ?? []).join(" ")}`.toLowerCase().includes(term))
@@ -64,4 +67,7 @@ export async function mockSearch(q: string): Promise<SearchResult[]> {
   // q vacío → TODO (para Home)
   if (!term) return [...H, ...C, ...F, ...R];
   return [...H, ...C, ...F, ...R];
+}
+export function getRestaurantById(id: string) {
+  return __mock.restaurants.find(r => r.id === id) || null;
 }

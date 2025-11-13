@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Sabor Andino - Browser</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+    }
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 10px 5px;
+      transition: all 0.3s;
+    }
+    button:hover {
+      background: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    button:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 20px;
+      background: #ecf0f1;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .success {
+      color: #27ae60;
+      font-weight: bold;
+    }
+    .error {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+    .loading {
+      color: #f39c12;
+    }
+    .info {
+      color: #3498db;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌮 Test Sabor Andino - Navegador</h1>
+    <p>Prueba la conexión al servicio SOAP de Sabor Andino directamente desde el navegador usando el proxy.</p>
+    
+    <div>
+      <button onclick="testProxyGenerico()">🔥 Test Proxy Genérico (JSON)</button>
+      <button onclick="testBuscarServicios()">🔍 Test buscarServicios</button>
+      <button onclick="testObtenerDetalle()">📋 Test obtenerDetalleServicio</button>
+    </div>
+
+    <div id="result">Haz clic en un botón para ejecutar un test...</div>
+  </div>
+
+  <script>
+    const resultDiv = document.getElementById('result');
+    
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const color = type === 'success' ? 'success' : 
+                   type === 'error' ? 'error' : 
+                   type === 'loading' ? 'loading' : 'info';
+      resultDiv.innerHTML += `<span class="${color}">[${timestamp}] ${message}</span>\n`;
+      resultDiv.scrollTop = resultDiv.scrollHeight;
+    }
+
+    function clear() {
+      resultDiv.innerHTML = '';
+    }
+
+    async function testProxyGenerico() {
+      clear();
+      log('═══════════════════════════════════════════════════', 'info');
+      log('🔥 TEST PROXY GENÉRICO - Sabor Andino', 'info');
+      log('═══════════════════════════════════════════════════', 'info');
+      log('');
+      
+      try {
+        log('📤 Enviando petición al proxy...', 'loading');
+        
+        const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+               xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <soap:Body>
+    <buscarServicios xmlns="http://SaborAndino.ec/Integracion">
+      <filtros></filtros>
+    </buscarServicios>
+  </soap:Body>
+</soap:Envelope>`;
+
+        const payload = {
+          url: 'https://saborandino.runasp.net/Ws_IntegracionRestaurante.asmx',
+          soapAction: 'http://SaborAndino.ec/Integracion/buscarServicios',
+          body: soapEnvelope
+        };
+
+        log('📡 Proxy URL: http://localhost:3001/api/proxy/soap', 'info');
+        log('📡 Target URL: ' + payload.url, 'info');
+        log('📡 SOAPAction: ' + payload.soapAction, 'info');
+        log('');
+
+        const response = await fetch('http://localhost:3001/api/proxy/soap', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const responseText = await response.text();
+        log('✅ Respuesta recibida del proxy', 'success');
+        log('');
+
+        // Parsear XML
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(responseText, 'text/xml');
+        
+        // Contar mesas
+        const servicios = xmlDoc.getElementsByTagName('ServicioDTO');
+        log(`✅ MESAS ENCONTRADAS: ${servicios.length}`, 'success');
+        log('');
+
+        if (servicios.length > 0) {
+          log('📋 Primeras 3 mesas:', 'info');
+          for (let i = 0; i < Math.min(3, servicios.length); i++) {
+            const servicio = servicios[i];
+            const id = servicio.getElementsByTagName('IdServicio')[0]?.textContent;
+            const nombre = servicio.getElementsByTagName('Nombre')[0]?.textContent;
+            const precio = servicio.getElementsByTagName('Precio')[0]?.textContent;
+            const ciudad = servicio.getElementsByTagName('Ciudad')[0]?.textContent;
+            
+            log(`   ${i + 1}. ID: ${id}`, 'info');
+            log(`      Nombre: ${nombre}`, 'info');
+            log(`      Ciudad: ${ciudad}`, 'info');
+            log(`      Precio: $${precio}`, 'info');
+            log('');
+          }
+        }
+
+        log('═══════════════════════════════════════════════════', 'success');
+        log('✅ TEST COMPLETADO EXITOSAMENTE', 'success');
+        log('═══════════════════════════════════════════════════', 'success');
+
+      } catch (error) {
+        log('', 'error');
+        log('❌ ERROR: ' + error.message, 'error');
+        log('', 'error');
+        console.error('Error completo:', error);
+      }
+    }
+
+    async function testBuscarServicios() {
+      clear();
+      log('═══════════════════════════════════════════════════', 'info');
+      log('🔍 TEST buscarServicios', 'info');
+      log('═══════════════════════════════════════════════════', 'info');
+      log('');
+      
+      try {
+        log('📦 Importando módulo Sabor Andino...', 'loading');
+        
+        // Simulación del código del frontend
+        const { esbSearchSaborAndino } = await import('/src/services/adapters/esb.adapter.ts');
+        
+        log('✅ Módulo importado', 'success');
+        log('📤 Llamando a esbSearchSaborAndino()...', 'loading');
+        log('');
+        
+        const results = await esbSearchSaborAndino({});
+        
+        log(`✅ RESULTADOS OBTENIDOS: ${results.length}`, 'success');
+        log('');
+        
+        if (results.length > 0) {
+          log('📋 Primeras 3 mesas:', 'info');
+          results.slice(0, 3).forEach((result, i) => {
+            log(`   ${i + 1}. ${result.item.name}`, 'info');
+            log(`      ID: ${result.item.id}`, 'info');
+            log(`      Ciudad: ${result.item.location}`, 'info');
+            log(`      Precio: $${result.item.pricePerNight}`, 'info');
+            log('');
+          });
+        }
+
+        log('═══════════════════════════════════════════════════', 'success');
+        log('✅ TEST COMPLETADO EXITOSAMENTE', 'success');
+        log('═══════════════════════════════════════════════════', 'success');
+
+      } catch (error) {
+        log('', 'error');
+        log('❌ ERROR: ' + error.message, 'error');
+        log('', 'error');
+        console.error('Error completo:', error);
+      }
+    }
+
+    async function testObtenerDetalle() {
+      clear();
+      log('═══════════════════════════════════════════════════', 'info');
+      log('📋 TEST obtenerDetalleServicio (ID: 2)', 'info');
+      log('═══════════════════════════════════════════════════', 'info');
+      log('');
+      
+      try {
+        log('📤 Enviando petición al proxy...', 'loading');
+        
+        const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+               xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <soap:Body>
+    <obtenerDetalleServicio xmlns="http://SaborAndino.ec/Integracion">
+      <idServicio>2</idServicio>
+    </obtenerDetalleServicio>
+  </soap:Body>
+</soap:Envelope>`;
+
+        const payload = {
+          url: 'https://saborandino.runasp.net/Ws_IntegracionRestaurante.asmx',
+          soapAction: 'http://SaborAndino.ec/Integracion/obtenerDetalleServicio',
+          body: soapEnvelope
+        };
+
+        const response = await fetch('http://localhost:3001/api/proxy/soap', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const responseText = await response.text();
+        log('✅ Respuesta recibida', 'success');
+        log('');
+
+        // Parsear XML
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(responseText, 'text/xml');
+        
+        const id = xmlDoc.getElementsByTagName('IdServicio')[0]?.textContent;
+        const nombre = xmlDoc.getElementsByTagName('Nombre')[0]?.textContent;
+        const tipo = xmlDoc.getElementsByTagName('Tipo')[0]?.textContent;
+        const ciudad = xmlDoc.getElementsByTagName('Ciudad')[0]?.textContent;
+        const precio = xmlDoc.getElementsByTagName('Precio')[0]?.textContent;
+        const clasificacion = xmlDoc.getElementsByTagName('Clasificacion')[0]?.textContent;
+        const descripcion = xmlDoc.getElementsByTagName('Descripcion')[0]?.textContent;
+
+        log('✅ SERVICIO ENCONTRADO:', 'success');
+        log('');
+        log(`   ID: ${id}`, 'info');
+        log(`   Nombre: ${nombre}`, 'info');
+        log(`   Tipo: ${tipo}`, 'info');
+        log(`   Ciudad: ${ciudad}`, 'info');
+        log(`   Precio: $${precio}`, 'info');
+        log(`   Clasificación: ${clasificacion}`, 'info');
+        log(`   Descripción: ${descripcion?.substring(0, 100)}...`, 'info');
+
+        log('');
+        log('═══════════════════════════════════════════════════', 'success');
+        log('✅ TEST COMPLETADO EXITOSAMENTE', 'success');
+        log('═══════════════════════════════════════════════════', 'success');
+
+      } catch (error) {
+        log('', 'error');
+        log('❌ ERROR: ' + error.message, 'error');
+        log('', 'error');
+        console.error('Error completo:', error);
+      }
+    }
+  </script>
+</body>
+</html>

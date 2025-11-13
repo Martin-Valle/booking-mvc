@@ -1,0 +1,337 @@
+{
+  "metadata": {
+    "testDate": "2025-10-27T00:42:07",
+    "testDuration": "~30 seconds",
+    "testVersion": "1.0.0",
+    "totalServices": 11,
+    "timeout": 10000
+  },
+  "summary": {
+    "total": 11,
+    "ok": 7,
+    "error": 4,
+    "timeout": 0,
+    "successRate": 63.6,
+    "averageResponseTime": 1588
+  },
+  "byCategory": {
+    "autos": {
+      "total": 4,
+      "ok": 2,
+      "error": 2,
+      "successRate": 50,
+      "averageResponseTime": 2027
+    },
+    "hoteles": {
+      "total": 3,
+      "ok": 1,
+      "error": 2,
+      "successRate": 33.3,
+      "averageResponseTime": 1308
+    },
+    "restaurantes": {
+      "total": 3,
+      "ok": 3,
+      "error": 0,
+      "successRate": 100,
+      "averageResponseTime": 1934
+    },
+    "vuelos": {
+      "total": 1,
+      "ok": 1,
+      "error": 0,
+      "successRate": 100,
+      "averageResponseTime": 1083
+    }
+  },
+  "services": [
+    {
+      "id": "easycar",
+      "name": "Easy Car",
+      "category": "autos",
+      "status": "OK",
+      "responseTime": 3394,
+      "endpoint": "http://easycar.runasp.net/IntegracionService.asmx",
+      "namespace": "http://tuservidor.com/booking/autos",
+      "soapAction": "http://tuservidor.com/booking/autos/BuscarServicios",
+      "features": ["search", "details", "availability", "reserve"],
+      "notes": "Servicio completamente funcional, retorna 2 vehículos disponibles"
+    },
+    {
+      "id": "backendcuenca",
+      "name": "Backend Cuenca",
+      "category": "autos",
+      "status": "ERROR",
+      "responseTime": 781,
+      "endpoint": "http://backendcuenca.runasp.net/WSIntegracion.asmx",
+      "namespace": "http://backendcuenca.com/integracion",
+      "errorCode": 502,
+      "errorMessage": "Bad Gateway",
+      "errorDetails": "El servidor gateway no puede contactar el servicio backend",
+      "priority": "MEDIA",
+      "estimatedFix": "Variable (depende del proveedor)",
+      "actions": [
+        "Verificar estado del servidor en runasp.net",
+        "Revisar configuración de reverse proxy",
+        "Validar que el servicio backend esté corriendo",
+        "Implementar health check endpoint"
+      ]
+    },
+    {
+      "id": "cuencacar",
+      "name": "Cuenca Car Rental",
+      "category": "autos",
+      "status": "OK",
+      "responseTime": 660,
+      "endpoint": "http://cuencacarrental.runasp.net/WS_Integracion.asmx",
+      "namespace": "http://tempuri.org/",
+      "soapAction": "http://tempuri.org/buscarServicios",
+      "features": ["search", "details", "availability"],
+      "notes": "Servicio más rápido de la categoría autos",
+      "performance": "excellent"
+    },
+    {
+      "id": "autosrentcar",
+      "name": "Autos RentCar",
+      "category": "autos",
+      "status": "ERROR",
+      "responseTime": 1206,
+      "endpoint": "https://rentaautosmadrid-eqcqaecdaxfthmca.canadacentral-01.azurewebsites.net/WsIntegracion.asmx",
+      "errorCode": 500,
+      "errorMessage": "Internal Server Error",
+      "errorDetails": "Login failed for user 'db30420' - Error de base de datos",
+      "priority": "ALTA",
+      "estimatedFix": "2-4 hours",
+      "actions": [
+        "Verificar connection string en web.config",
+        "Validar credenciales de SQL Server",
+        "Revisar permisos del usuario db30420",
+        "Contactar al DBA para restablecer acceso"
+      ],
+      "technicalDetails": {
+        "errorType": "SqlException",
+        "stackTrace": "at AccesoDatos.Repos.AutosRepo.Buscar(FiltrosAutos f)",
+        "layer": "Data Access Layer"
+      }
+    },
+    {
+      "id": "hotelboutique",
+      "name": "Hotel Boutique",
+      "category": "hoteles",
+      "status": "ERROR",
+      "responseTime": 631,
+      "endpoint": "http://hotelboutique.runasp.net/WS_Integracion.asmx",
+      "namespace": "http://hotelparis.com/integracion",
+      "errorCode": 500,
+      "errorMessage": "Internal Server Error",
+      "errorDetails": "Error interno del servidor sin detalles específicos",
+      "priority": "MEDIA",
+      "estimatedFix": "6-8 hours",
+      "actions": [
+        "Habilitar logs detallados en el servidor",
+        "Solicitar Event Logs al proveedor",
+        "Agregar try-catch global con logging",
+        "Implementar manejo de errores personalizado"
+      ]
+    },
+    {
+      "id": "km25madrid",
+      "name": "KM25 Madrid Hotel",
+      "category": "hoteles",
+      "status": "OK",
+      "responseTime": 1308,
+      "endpoint": "http://km25madrid.runasp.net/Services/HotelService.asmx",
+      "namespace": "http://mio.hotel/booking",
+      "soapAction": "http://mio.hotel/booking/buscarServicios",
+      "features": ["search", "details", "reserve", "cancel", "invoice"],
+      "notes": "Único servicio de hoteles funcionando actualmente"
+    },
+    {
+      "id": "realcuenca",
+      "name": "Real Cuenca Hotel",
+      "category": "hoteles",
+      "status": "ERROR",
+      "responseTime": 1518,
+      "endpoint": "https://realdecuencaintegracion-abachrhfgzcrb0af.canadacentral-01.azurewebsites.net/WS_GestionIntegracionDetalleEspacio.asmx",
+      "namespace": "http://tempuri.org/",
+      "errorCode": 500,
+      "errorMessage": "Internal Server Error",
+      "errorDetails": "There is already an open DataReader associated with this Command which must be closed first",
+      "priority": "ALTA",
+      "estimatedFix": "4-6 hours",
+      "actions": [
+        "Revisar código en GDatos.BuscarServicios",
+        "Implementar using statements para DataReaders",
+        "Agregar try-catch-finally para garantizar cierre",
+        "Realizar code review de manejo de conexiones"
+      ],
+      "technicalDetails": {
+        "errorType": "DataReaderException",
+        "bugType": "Resource Leak",
+        "layer": "Data Access Layer",
+        "fixExample": "using (SqlDataReader reader = cmd.ExecuteReader()) { ... }"
+      }
+    },
+    {
+      "id": "restaurantgh",
+      "name": "Restaurant GH",
+      "category": "restaurantes",
+      "status": "OK",
+      "responseTime": 1172,
+      "endpoint": "http://sanctumcortejo.runasp.net/Ws_IntegracionRestaurante.asmx",
+      "namespace": "http://sanctumcortejo.ec/Integracion",
+      "soapAction": "http://sanctumcortejo.ec/Integracion/buscarServicios",
+      "features": ["search", "details", "availability", "reserve"],
+      "notes": "Servicio robusto y confiable"
+    },
+    {
+      "id": "cafeteria",
+      "name": "Cafeteria París",
+      "category": "restaurantes",
+      "status": "OK",
+      "responseTime": 3390,
+      "endpoint": "https://cafeteriaparis-c4d5ghhbfqe2fkfs.canadacentral-01.azurewebsites.net/integracion.asmx",
+      "namespace": "http://cafeteria.com/integracion",
+      "soapAction": "http://cafeteria.com/integracion/BuscarServicios",
+      "features": ["search"],
+      "notes": "Funcional pero con tiempo de respuesta elevado",
+      "performance": "poor",
+      "optimization": {
+        "priority": "BAJA",
+        "currentTime": 3390,
+        "targetTime": 2000,
+        "actions": [
+          "Analizar queries de base de datos",
+          "Implementar caché de resultados",
+          "Optimizar serialización XML",
+          "Considerar upgrade de plan en Azure"
+        ]
+      }
+    },
+    {
+      "id": "cangrejofeliz",
+      "name": "El Cangrejo Feliz",
+      "category": "restaurantes",
+      "status": "OK",
+      "responseTime": 1240,
+      "endpoint": "https://elcangrejofeliz.runasp.net/WS_IntegracionRestaurante.asmx",
+      "namespace": "http://elcangrejofeliz.ec/Integracion",
+      "soapAction": "http://elcangrejofeliz.ec/Integracion/buscarServicios",
+      "features": ["search", "details"],
+      "notes": "Servicio estable con buen rendimiento"
+    },
+    {
+      "id": "skyandes",
+      "name": "Sky Andes",
+      "category": "vuelos",
+      "status": "OK",
+      "responseTime": 1083,
+      "endpoint": "http://skyandesintegracion.runasp.net/WS_Integracion.asmx",
+      "namespace": "http://skyandes.com/integracion",
+      "soapAction": "http://skyandes.com/integracion/buscarServicios",
+      "features": ["search", "details", "reserve"],
+      "notes": "Servicio más rápido de todos",
+      "performance": "excellent"
+    }
+  ],
+  "recommendations": {
+    "immediate": [
+      {
+        "priority": "ALTA",
+        "service": "Autos RentCar",
+        "issue": "Database authentication failure",
+        "action": "Fix SQL Server credentials",
+        "impact": "Critical - Service completely unavailable",
+        "estimatedTime": "2-4 hours"
+      },
+      {
+        "priority": "ALTA",
+        "service": "Real Cuenca Hotel",
+        "issue": "DataReader resource leak",
+        "action": "Implement proper resource disposal",
+        "impact": "Critical - Service completely unavailable",
+        "estimatedTime": "4-6 hours"
+      }
+    ],
+    "shortTerm": [
+      {
+        "priority": "MEDIA",
+        "service": "Backend Cuenca",
+        "issue": "Gateway timeout",
+        "action": "Investigate server infrastructure",
+        "impact": "High - Service unavailable",
+        "estimatedTime": "Variable"
+      },
+      {
+        "priority": "MEDIA",
+        "service": "Hotel Boutique",
+        "issue": "Unhandled internal error",
+        "action": "Enable detailed logging and error handling",
+        "impact": "High - Service unavailable",
+        "estimatedTime": "6-8 hours"
+      }
+    ],
+    "optimization": [
+      {
+        "priority": "BAJA",
+        "service": "Cafeteria París",
+        "issue": "Slow response time (3390ms)",
+        "action": "Performance tuning",
+        "impact": "Medium - Poor user experience",
+        "targetTime": "< 2000ms"
+      },
+      {
+        "priority": "BAJA",
+        "service": "Easy Car",
+        "issue": "Slow response time (3394ms)",
+        "action": "Performance tuning",
+        "impact": "Medium - Poor user experience",
+        "targetTime": "< 2000ms"
+      }
+    ]
+  },
+  "metrics": {
+    "targets": {
+      "availability": 95,
+      "averageResponseTime": 1000,
+      "errorRate": 5
+    },
+    "current": {
+      "availability": 63.6,
+      "averageResponseTime": 1588,
+      "errorRate": 36.4
+    },
+    "gaps": {
+      "availability": -31.4,
+      "averageResponseTime": 588,
+      "errorRate": 31.4
+    }
+  },
+  "contacts": {
+    "runasp": {
+      "provider": "runasp.net",
+      "contact": "support@runasp.net",
+      "sla": "99.0%",
+      "services": [
+        "Easy Car",
+        "Backend Cuenca",
+        "Cuenca Car Rental",
+        "Hotel Boutique",
+        "KM25 Madrid Hotel",
+        "Restaurant GH",
+        "El Cangrejo Feliz",
+        "Sky Andes"
+      ]
+    },
+    "azure": {
+      "provider": "Microsoft Azure",
+      "contact": "azure-support",
+      "sla": "99.9%",
+      "services": [
+        "Autos RentCar",
+        "Real Cuenca Hotel",
+        "Cafeteria París"
+      ]
+    }
+  }
+}

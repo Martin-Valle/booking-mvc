@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Easy Car - Diagnóstico</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+        .log-success {
+            color: #4ec9b0;
+        }
+        .log-error {
+            color: #f48771;
+        }
+        .log-info {
+            color: #569cd6;
+        }
+        .log-warn {
+            color: #dcdcaa;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .vehicle-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .vehicle-card h3 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-online {
+            background: #28a745;
+            color: white;
+        }
+        .status-offline {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Easy Car - Diagnóstico de Integración</h1>
+        
+        <div>
+            <button id="testDirect" onclick="testDirectAdapter()">1️⃣ Test Directo (Adapter)</button>
+            <button id="testFrontend" onclick="testFrontendService()">2️⃣ Test Frontend (Search Service)</button>
+            <button id="clearLog" onclick="clearLog()">🗑️ Limpiar Log</button>
+        </div>
+
+        <div class="log" id="log"></div>
+        
+        <div class="results" id="results"></div>
+    </div>
+
+    <script type="module">
+        window.log = function(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = `log-${type}`;
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+
+        window.clearLog = function() {
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+        };
+
+        window.testDirectAdapter = async function() {
+            const btn = document.getElementById('testDirect');
+            btn.disabled = true;
+            clearLog();
+            
+            log('====== TEST DIRECTO CON ADAPTER ======', 'info');
+            
+            try {
+                log('1. Importando módulos...', 'info');
+                
+                // Import dinámico
+                const easyCarModule = await import('./esb/gateway/easy-car.adapter.js');
+                const configModule = await import('./esb/utils/config.js');
+                
+                log('✅ Módulos importados', 'success');
+                
+                log('2. Obteniendo configuración...', 'info');
+                const config = configModule.getESBConfig();
+                const easyCarConfig = config.endpoints.easyCar;
+                
+                log(`   URL: ${easyCarConfig.url}`, 'info');
+                log(`   Enabled: ${easyCarConfig.enabled}`, 'info');
+                
+                if (!easyCarConfig.enabled) {
+                    throw new Error('Easy Car está deshabilitado en config');
+                }
+                
+                log('3. Creando adapter...', 'info');
+                const adapter = new easyCarModule.EasyCarSoapAdapter(easyCarConfig);
+                log('✅ Adapter creado', 'success');
+                
+                log('4. Llamando a buscarServicios()...', 'info');
+                const vehiculos = await adapter.buscarServicios();
+                
+                log(`✅ Respuesta recibida: ${vehiculos.length} vehículos`, 'success');
+                
+                // Mostrar resultados
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '<h2>🎉 Resultados:</h2>';
+                
+                vehiculos.forEach((v, i) => {
+                    resultsDiv.innerHTML += `
+                        <div class="vehicle-card">
+                            <h3>${i + 1}. ${v.Marca} ${v.Modelo}</h3>
+                            <p><strong>ID:</strong> ${v.IdVehiculo}</p>
+                            <p><strong>Categoría:</strong> ${v.CategoriaVehiculo}</p>
+                            <p><strong>Transmisión:</strong> ${v.Transmision}</p>
+                            <p><strong>Precio/día:</strong> $${v.PrecioBaseDia}</p>
+                            <p><strong>Año:</strong> ${v.Anio}</p>
+                            <p><strong>Combustible:</strong> ${v.TipoCombustible}</p>
+                        </div>
+                    `;
+                });
+                
+            } catch (error) {
+                log(`❌ ERROR: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        window.testFrontendService = async function() {
+            const btn = document.getElementById('testFrontend');
+            btn.disabled = true;
+            clearLog();
+            
+            log('====== TEST FRONTEND SERVICE ======', 'info');
+            
+            try {
+                log('1. Importando search service...', 'info');
+                const searchModule = await import('./src/services/search.service.js');
+                log('✅ Search service importado', 'success');
+                
+                log('2. Llamando a searchEasyCar()...', 'info');
+                const results = await searchModule.searchEasyCar({});
+                
+                log(`✅ Respuesta recibida: ${results.length} resultados`, 'success');
+                
+                // Mostrar resultados
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '<h2>🎉 Resultados:</h2>';
+                
+                results.forEach((r, i) => {
+                    const car = r.item;
+                    resultsDiv.innerHTML += `
+                        <div class="vehicle-card">
+                            <h3>${i + 1}. ${car.brand} ${car.model}</h3>
+                            <p><strong>ID:</strong> ${car.id}</p>
+                            <p><strong>Precio/día:</strong> $${car.pricePerDay}</p>
+                        </div>
+                    `;
+                });
+                
+            } catch (error) {
+                log(`❌ ERROR: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        // Log inicial
+        log('🚀 Página de diagnóstico cargada', 'success');
+        log('Presiona un botón para iniciar las pruebas', 'info');
+    </script>
+</body>
+</html>

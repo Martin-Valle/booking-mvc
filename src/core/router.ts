@@ -4,8 +4,15 @@ export class Router {
   private routes: Route[] = [];
 
   constructor() {
-    window.addEventListener("hashchange", () => this.resolve());
-    window.addEventListener("load", () => this.resolve());
+    console.log('[Router] Constructor called, attaching event listeners');
+    window.addEventListener("hashchange", () => {
+      console.log('[Router] hashchange event fired');
+      this.resolve();
+    });
+    window.addEventListener("load", () => {
+      console.log('[Router] load event fired');
+      this.resolve();
+    });
   }
 
   register(path: string, action: () => void) {

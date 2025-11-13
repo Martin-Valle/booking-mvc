@@ -34,6 +34,7 @@ initThemeAssets();
 
 // ---------- Shell ----------
 function mountShell() {
+  console.log('[main.ts] mountShell called');
   mountHeader();
   mountFooter();
   mountFloatingCart();

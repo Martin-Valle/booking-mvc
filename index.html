@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>UniBooking • Reserva todo en un solo lugar</title>
   <link rel="icon" href="/favicon.ico" />
+  <!-- Polyfill para process.env en el navegador -->
+  <script>
+    window.process = window.process || {};
+    window.process.env = window.process.env || {
+      DATA_BACKEND: 'memory',
+      PGSSL: 'false',
+      PGSSL_REJECT_UNAUTHORIZED: 'false',
+      DATABASE_URL: ''
+    };
+  </script>
 </head>
 <body>
   <div id="app" class="d-flex flex-column min-vh-100">

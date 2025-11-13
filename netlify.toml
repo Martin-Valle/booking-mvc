@@ -1,0 +1,56 @@
+# Configuración de Netlify para booking-mvc (Vite + TypeScript)
+
+[build]
+  # Comando para construir el proyecto
+  command = "npm run build"
+  
+  # Directorio donde Vite genera los archivos compilados
+  publish = "dist"
+  
+  # Directorio de funciones serverless
+  functions = "netlify/functions"
+  
+  # Base directory (dejar vacío si netlify.toml está en la raíz)
+  base = ""
+
+# Configuración de Node.js
+[build.environment]
+  NODE_VERSION = "20"
+
+# Redireccionamientos para SPA (Single Page Application)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers de seguridad y cache
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Headers CORS para Netlify Functions
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, SOAPAction, Authorization"
