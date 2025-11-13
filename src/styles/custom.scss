@@ -1,19 +1,24 @@
-// Bootstrap + Tema
-@use "bootstrap/scss/functions" as *; // Usar el módulo de funciones de Bootstrap
-@use "bootstrap/scss/bootstrap" as *;  // Usar el módulo principal de Bootstrap
+/* src/styles/custom.scss */
 
-// Paleta y tema
-$primary: #0a58ca; // azul propio
-$secondary: #f5b700; // acento
-$body-font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-$enable-rounded: true;
-$btn-border-radius: 0.65rem;
-$card-border-radius: 1rem;
+/* Bootstrap entry con overrides */
+@use "bootstrap/scss/bootstrap" with (
+  $primary: #0a58ca,
+  $secondary: #f5b700,
 
-// Fondo dinámico de la página principal
+  // listas entre paréntesis para que Sass no las parta por comas
+  $font-family-sans-serif: ('Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"),
+  $font-family-base: ('Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"),
+
+  $enable-rounded: true,
+  $btn-border-radius: 0.65rem,
+  $card-border-radius: 1rem
+);
+
+/* ---- Tema de la app ---- */
+/* Imágenes del héroe las inyecta JS con variables CSS (core/theme.ts) */
 :root {
-  --hero-home: url('/assets/hero.jpg');
-  --hero-results: url('/assets/hero.jpg');
+  --hero-home: none;
+  --hero-results: none;
 }
 
 .hero {
@@ -22,30 +27,30 @@ $card-border-radius: 1rem;
     var(--hero-home) center/cover no-repeat;
   color: #fff;
   padding: 5rem 0;
+  min-height: 360px;
   transition: background-image .35s ease;
 }
-
 .hero--results {
   background:
     linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.35)),
     var(--hero-results) center/cover no-repeat;
-  min-height: 200px; 
+  min-height: 260px;
 }
 
-// Para mostrar las imágenes de los resultados
-.result-thumb { 
-  object-fit: cover; 
-  height: 180px; 
-  background: #f8f9fa; 
+/* Thumbs de resultados */
+.result-thumb {
+  object-fit: cover;
+  height: 180px;
+  background: #f8f9fa;
 }
 
-// Estilo de los badges
+/* Badges */
 .badge.bg-light.text-dark.border {
   border-color: #e9ecef !important;
   font-weight: 500;
 }
 
-// Carrito flotante
+/* Carrito flotante */
 .floating-cart {
   position: fixed;
   right: 1rem;
@@ -54,24 +59,16 @@ $card-border-radius: 1rem;
   transform: translateY(150%);
   opacity: 0;
   transition: all .25s ease;
-  z-index: 1070; // debajo del toast (1080) pero sobre el resto
+  z-index: 1070; /* debajo del toast (1080) */
   border-radius: 999px;
 }
 .floating-cart.show {
   transform: translateY(0);
   opacity: 1;
 }
-
-// Hover effects para tarjetas
-.hover-shadow {
-  transition: all 0.3s ease;
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
-  }
-}
-
-// Estilos para pantalla de vuelos
-.bg-gradient-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* Ocultar botón nativo de revelar contraseña (Edge/Opera/Safari) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear { display: none; }
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden; position: absolute; right: 0;
 }

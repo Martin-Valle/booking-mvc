@@ -17,7 +17,6 @@ export function HomeController() {
     sessionStorage.setItem("q", q); // opcional (SearchBar ya lo guardó)
     router.navigate("/results");
   });
-  console.log('[HomeController] Appending view to mount');
   mount.appendChild(view.el);
 
   // Config base para el feed "Recomendado" (mostrar todo)

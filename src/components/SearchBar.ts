@@ -2,9 +2,9 @@
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
-// Nota: rangePlugin no tiene buenos tipos; lo tipamos como any para evitar TS errors.
 import rangePlugin from "flatpickr/dist/plugins/rangePlugin.js";
 import type { ServiceKind } from "../models/types";
+import { router } from "../core/router";
 
 function addDays(d: Date, days: number) {
   const r = new Date(d);
@@ -12,7 +12,7 @@ function addDays(d: Date, days: number) {
   return r;
 }
 
-export function SearchBar(onSubmit: (q: string) => void) {
+export function SearchBar(onSubmit?: (q: string) => void) {
   const el = document.createElement("form");
   el.className = "row g-2 align-items-stretch";
 
@@ -40,20 +40,20 @@ export function SearchBar(onSubmit: (q: string) => void) {
     </div>
 
     <div class="col-12 col-sm-4 col-lg-2 d-grid">
-      <button class="btn btn-lg btn-secondary">Buscar</button>
+      <button class="btn btn-lg btn-secondary" type="submit">Buscar</button>
     </div>
   `;
 
-  // Flatpickr con un solo calendario para 2 inputs (como Booking)
-  const start = el.querySelector<HTMLInputElement>("#checkin")!;
-  const end = el.querySelector<HTMLInputElement>("#checkout")!;
+  // Flatpickr: 1 calendario para 2 inputs (rango)
+  const $start = el.querySelector<HTMLInputElement>("#checkin")!;
+  const $end = el.querySelector<HTMLInputElement>("#checkout")!;
 
-  flatpickr(start, {
+  flatpickr($start, {
     locale: Spanish,
     dateFormat: "d/m/Y",
     minDate: "today",
     maxDate: addDays(new Date(), 365),
-    plugins: [(rangePlugin as any)({ input: end })],
+    plugins: [(rangePlugin as any)({ input: $end })],
     onChange(dates) {
       if (dates.length === 2) (this as any).close?.();
     },
@@ -65,19 +65,21 @@ export function SearchBar(onSubmit: (q: string) => void) {
 
     const q = (data.get("q")?.toString() || "").trim();
 
-    // Guarda kinds según la selección
+    // Persistir tipo(s) seleccionados
     const v = (data.get("kind")?.toString() || "all") as "all" | ServiceKind;
     let kinds: ServiceKind[] = ["hotel", "car", "flight", "restaurant"];
-    if (v !== "all") kinds = [v]; // ← ESTA LÍNEA ESTABA INCOMPLETA
-
-    sessionStorage.setItem("q", q);
+    if (v !== "all") kinds = [v];
     sessionStorage.setItem("kinds", JSON.stringify(kinds));
 
-    // Si quisieras fechas:
-    // sessionStorage.setItem("checkin", start.value);
-    // sessionStorage.setItem("checkout", end.value);
+    // También guardamos fechas por si luego las usas en el servicio
+    sessionStorage.setItem("checkin", $start.value || "");
+    sessionStorage.setItem("checkout", $end.value || "");
 
-    onSubmit(q);
+    // Callback opcional (si tu Home lo usa)
+    onSubmit?.(q);
+
+    // Navega con ?q= para sincronizar con el filtro "Ciudad"
+    router.navigate(q ? `/results?q=${encodeURIComponent(q)}` : "/results");
   });
 
   return el;

@@ -1,16 +1,36 @@
+// src/views/CartView.ts
 import type { CartItem } from "../models/types";
 import { fmtUSD } from "../core/money";
+
+type CartViewOpts = {
+  isLoggedIn?: () => boolean;
+  onCheckout?: (items: CartItem[]) => void;
+  taxRate?: number; // p.ej. 0.15
+  requireLoginForCheckout?: boolean;
+};
+
+// Placeholder inline (no requiere archivo físico)
+const PLACEHOLDER =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72'>
+       <rect width='100%' height='100%' fill='#f0f2f4'/>
+       <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'
+             font-family='system-ui, -apple-system, Segoe UI, Roboto, Arial'
+             font-size='10' fill='#9aa0a6'>Sin imagen</text>
+     </svg>`
+  );
 
 /**
  * Vista del carrito.
  * @param items Items actuales del carrito.
  * @param onChange (opcional) callback cuando cambian cantidades o se elimina un item.
- * @param opts (opcional) { isLoggedIn?: ()=>boolean, onCheckout?: (items)=>void }
+ * @param opts Opciones: isLoggedIn, onCheckout, taxRate, requireLoginForCheckout
  */
 export function CartView(
   items: CartItem[],
   onChange?: (items: CartItem[]) => void,
-  opts?: { isLoggedIn?: () => boolean; onCheckout?: (items: CartItem[]) => void }
+  opts?: CartViewOpts
 ) {
   const el = document.createElement("section");
   el.className = "container py-4";
@@ -23,9 +43,12 @@ export function CartView(
       !!localStorage.getItem("token") ||
       !!sessionStorage.getItem("user"));
 
+  const taxRate = typeof opts?.taxRate === "number" ? opts!.taxRate! : 0.15;
+  const mustLoginForCheckout = !!opts?.requireLoginForCheckout;
+
   const computeTotals = () => {
     const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0);
-    const iva = subtotal * 0.15;
+    const iva = subtotal * taxRate;
     const total = subtotal + iva;
     return { subtotal, iva, total };
   };
@@ -35,6 +58,9 @@ export function CartView(
     (el.querySelector("#subtotal") as HTMLElement).textContent = fmtUSD(subtotal);
     (el.querySelector("#iva") as HTMLElement).textContent = fmtUSD(iva);
     (el.querySelector("#total") as HTMLElement).textContent = fmtUSD(total);
+    (el.querySelector("#iva-label") as HTMLElement).textContent = `IVA (${Math.round(
+      taxRate * 100
+    )}%)`;
 
     const payBtn = el.querySelector("#pay-btn") as HTMLButtonElement | null;
     if (payBtn) payBtn.disabled = items.length === 0;
@@ -54,7 +80,7 @@ export function CartView(
       const li = document.createElement("li");
       li.className = "list-group-item d-flex align-items-center";
       li.innerHTML = `
-        <img src="${it.photo || "/assets/placeholder.jpg"}"
+        <img src="${it.photo || PLACEHOLDER}"
              class="me-3 rounded" style="width:72px;height:72px;object-fit:cover" />
         <div class="flex-grow-1">
           <div class="fw-semibold">${it.title}</div>
@@ -85,16 +111,15 @@ export function CartView(
           <h5 class="mb-2">Resumen de compra</h5>
           <div id="login-alert" class="alert alert-warning d-none alert-dismissible fade show mt-1" role="alert">
             Debes iniciar sesión para continuar con el pago.
-            <a href="#/profile" class="alert-link">Iniciar sesión</a>
-            <button type="button" class="btn-close" aria-label="Close"
-              onclick="(this.parentElement as HTMLElement).classList.add('d-none')"></button>
+            <a href="#/login" class="alert-link">Iniciar sesión</a>
+            <button type="button" class="btn-close" aria-label="Close" data-close="login-alert"></button>
           </div>
           <div class="d-flex justify-content-between mt-2">
             <span>Subtotal</span>
             <strong id="subtotal">$0.00</strong>
           </div>
           <div class="d-flex justify-content-between mt-2">
-            <span>IVA (15%)</span>
+            <span id="iva-label">IVA (15%)</span>
             <strong id="iva">$0.00</strong>
           </div>
           <hr>
@@ -110,9 +135,20 @@ export function CartView(
   // Primera pintura
   renderList();
 
-  // ---- eventos carrito (+ / – / eliminar) ----
+  // ---- Delegación de eventos ----
   el.addEventListener("click", (ev) => {
-    const btn = (ev.target as HTMLElement).closest<HTMLElement>("[data-act]");
+    const target = ev.target as HTMLElement;
+
+    // 1) Cerrar el aviso con la "X"
+    const closeBtn = target.closest<HTMLElement>('[data-close="login-alert"]');
+    if (closeBtn) {
+      const alertBox = el.querySelector("#login-alert") as HTMLElement | null;
+      alertBox?.classList.add("d-none");
+      return;
+    }
+
+    // 2) Acciones del carrito (+ / – / eliminar)
+    const btn = target.closest<HTMLElement>("[data-act]");
     if (!btn) return;
 
     const act = btn.dataset.act!;
@@ -120,7 +156,6 @@ export function CartView(
     if (Number.isNaN(i) || i < 0 || i >= items.length) return;
 
     const it = items[i];
-
     if (act === "inc") {
       it.qty += 1;
     } else if (act === "dec") {
@@ -139,13 +174,12 @@ export function CartView(
     e.preventDefault();
     const alertBox = el.querySelector("#login-alert") as HTMLElement;
 
-    if (!isLoggedIn()) {
+    if (mustLoginForCheckout && !isLoggedIn()) {
       alertBox.classList.remove("d-none");
       alertBox.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
-    // Si está logueado, dispara callback opcional (o aquí navega a tu checkout)
     opts?.onCheckout?.(items);
   });
 
